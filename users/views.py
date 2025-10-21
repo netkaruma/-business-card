@@ -17,11 +17,9 @@ def register(request):
 
         if form.is_valid():
             user = form.save()
-            # Успешный результат
             return redirect('main:main')
 
         else:
-            # Возвращаем ошибки в формате JSON
             errors = {}
             for field, error_list in form.errors.items():
                 errors[field] = error_list
@@ -33,18 +31,15 @@ def user_login(request):
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
-            # Получаем данные из формы
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
-            # Проверяем, есть ли такой пользователь
             
             user = authenticate(request, username=username, password=password)
             
             if user is not None:
-                # Если аутентификация успешна, выполняем вход
                 login(request, user)
 
-                return redirect('main:main')  # Переадресовываем на главную страницу
+                return redirect('main:main')
         else:
             errors = {}
             for field, error_list in form.errors.items():
