@@ -10,7 +10,6 @@ def get_profile(request):
     errors = request.session.get('form_errors',None)
 
     if errors:
-        # Удаляем ошибки из сессии, чтобы они не показывались при следующем запросе
         del request.session['form_errors']
 
     if request.user.is_authenticated:
