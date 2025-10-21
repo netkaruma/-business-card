@@ -1,0 +1,160 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Визитка</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{% static "images/favfav.png" %}" type="image/x-icon">
+    <script>
+        var saveColorUrl = "{% url 'users:save-color' %}";  // Рендерим URL в переменную JavaScript
+        // Получаем значение цвета из Django переменной
+        var colorDesign = "{{ color }}";
+        
+         // Устанавливаем его в качестве переменной CSS
+         document.documentElement.style.setProperty('--color-design', colorDesign);
+    </script> 
+</head>
+
+
+<body>
+    <div class="container" style="position: relative;">
+            <!-- Круглая кнопка-меню -->
+        <div class="auth-container">
+            <div class="auth-icon" onclick="toggleAuthMenu()"></div>
+            <div class="auth-menu">
+                {% if user.is_authenticated %}
+                <div class="user-info">
+                    <p class="auth-name-icon">{{ user.username }}</p>
+                    <form action="{% url 'users:logout' %}" method="post" class="logout-form">
+                        {% csrf_token %}
+                        <button>Выйти</button>
+                    </form>
+                </div>
+                {% else %}
+            
+                <button onclick="openModal('loginModal')">Войти</button>
+                <button onclick="openModal('registerModal')">Регистрация</button>
+                {% endif %}
+                <!-- Палитра цветов -->
+                <button class="open-modal-btn" onclick="openModal('colorModal')">Выбрать цвет</button>
+            </div>
+        </div>
+            <!-- Модальное окно -->
+        <div id="colorModal" class="modal">
+            <div id = "modal-palitre" class="modal-content">
+                <span class="close" onclick="closeModal('colorModal')">&times;</span>
+                <h2>Выберите цвет</h2>
+                
+                <!-- Палитра цветов -->
+                <div class="controls">
+                    <input type="color" id="colorPicker1" value="#ff0000">
+                    <input type="range" id="alphaSlider" min="0" max="1" step="0.01" value="1">
+                </div>
+                <button onclick="closeModal('colorModal'); submitColor() ">Сохранить</button>
+            </div>
+        </div>
+    
+
+        <img src="{% static "images/photo_profile.jpg" %}" alt="Фото профиля" class="profile-img">
+        <h1>netkaruma</h1>
+        <p>Даня, 22 года</p>
+        <p>Стэк: Backend django,python,postgresql,doker</p>
+        <p>Стэк: Frontend JavaScript ajax,html,css</p>
+        
+        <!-- Кнопки для открытия модального окна -->
+    
+        <!-- Модальное окно авторизации -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Вход</h2>
+            <form id="loginForm" action="{% url 'users:login' %}" method="POST">
+                {% csrf_token %}
+                <input name = "username" type="text" placeholder="Логин">
+                <input name = "password" type="password" placeholder="Пароль">
+                <button onclick="submit">Войти</button>
+                <button type="button" onclick="closeModal('loginModal'); openModal('registerModal')">Регистрация</button>
+            </form>
+        </div>
+    </div>
+    <!-- Модальное окно регистрации -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Регистрация</h2>
+            <form id="registerForm" action="{% url 'users:register' %}" method="POST">
+                {% csrf_token %}
+                <input name="username" type="text" placeholder="Логин" required>
+                <input name="email" type="email" placeholder="Email" required>
+                <input name="password1" type="password" placeholder="Пароль" required>
+                <input name="password2" type="password" placeholder="Пароль" required>
+                <button type="submit">Зарегистрироваться</button>
+                <button type="button" onclick="closeModal('registerModal'); openModal('loginModal')">Авторизация</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="social-links">
+        <a href="https://github.com/netkaruma" target="_blank" class="social-button">GitHub</a>
+        <a href="https://vk.com/danilmanzurov" target="_blank" class="social-button">Vk</a>
+        <a href="mailto:dani.manz@mail.ru" target="_blank" class="social-button">Email</a>
+        {# <a href="https://shikimori.one/dvedalus" target="_blank" class="social-button">Shikimori</a> #}
+    </div>
+    
+
+    {% if errors %}
+    <div id="notifications" class="notification">
+        <div class="header">
+            <span class="title">Ошибка</span>
+            <span class="close" onclick="closeNotification()">×</span>
+        </div>
+        <div class="content">
+            {% for key,texts in errors.items %}
+                {% for error in texts %}
+                {{error}}
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+
+    <div class="comment-section">
+        <h2>Оставьте комментарий</h2>
+        <form action = "{% url "comments:register_comment" %}" method = "post">
+            {% csrf_token %}
+            <textarea id="commentInput" name="comment" placeholder="Введите ваш комментарий..." required></textarea><br>
+            <button class="submit-button" type="submit">Отправить</button>
+        </form>
+
+        <!-- Пример комментариев с лайками -->
+        {% for element in comments %}
+        <div class="user-comment" comment-id = "{{element.id}}">
+            <strong>{{ element.user.username }}</strong>
+            <p>{{ element.value }}</p>
+            <small>{{ element.date|timesince }} назад</small> <!-- Показывает время с момента публикации -->
+            {% if element.user == user %}
+            <form method="post" action = "{% url "comments:delete_comment" %}">
+                {% csrf_token %}
+                <input type="hidden" name="comment-id" value="{{element.id}}">
+                <button class="delete-comment">✖</button>
+            </form>
+                {% endif %}
+            <div class="like-container">
+                <span class="like-count">{{ element.likes }}</span>
+                <button class="like-button {% if element.id in liked_comments %}liked{% endif %}">❤️</button>
+            </div>
+        </div>
+        {% endfor %}
+            
+        </div>
+    </div>
+    
+    <script src = "{% static "js/scripts.js" %}"></script>
+</body>
+</html>
